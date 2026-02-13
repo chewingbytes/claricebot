@@ -1,13 +1,5 @@
 ---
-import { supabase } from "../lib/supabase";
-
-const { data, error } = await supabase
-  .from("messages")
-  .select("id, input_text, output_text, created_at")
-  .order("created_at", { ascending: false })
-  .limit(20);
-
-const rows = data ?? [];
+import MessageFeed from "../components/MessageFeed.jsx";
 ---
 <!doctype html>
 <html lang="en">
@@ -68,23 +60,6 @@ const rows = data ?? [];
   </head>
   <body>
     <h1>Latest Screen Summaries</h1>
-    {error ? <div class="error">{error.message}</div> : null}
-    {rows.length === 0 ? (
-      <div class="empty">No messages yet.</div>
-    ) : (
-      <div class="grid">
-        {rows.map((row) => (
-          <article class="card">
-            <div class="timestamp">
-              {new Date(row.created_at).toLocaleString()}
-            </div>
-            <div class="label">Input</div>
-            <div class="body">{row.input_text || "(empty)"}</div>
-            <div class="label">Output</div>
-            <div class="body">{row.output_text || "(empty)"}</div>
-          </article>
-        ))}
-      </div>
-    )}
+    <MessageFeed client:load />
   </body>
 </html>

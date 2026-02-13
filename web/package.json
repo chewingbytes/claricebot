@@ -10,6 +10,9 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
-    "astro": "^4.15.6"
+    "@astrojs/react": "^3.6.0",
+    "astro": "^4.15.6",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }
