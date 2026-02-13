@@ -1,8 +1,0 @@
-{
-  "version": 2,
-  "functions": {
-    "src/pages/api/*.js": {
-      "runtime": "nodejs24.x"
-    }
-  }
-}

@@ -27,26 +27,6 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
-app.get("/messages", async (req, res) => {
-  const limit = Number(req.query.limit) || 20;
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  try {
-    const { data, error } = await supabase
-      .from("messages")
-      .select("id, input_text, output_text, created_at")
-      .order("created_at", { ascending: false })
-      .limit(limit);
-
-    if (error) {
-      throw error;
-    }
-
-    return res.json({ data: data || [] });
-  } catch (error) {
-    return res.status(500).json({ error: "Failed to load messages.", detail: String(error) });
-  }
-});
-
 const multipartRaw = express.raw({
   type: "multipart/form-data",
   limit: "50mb"

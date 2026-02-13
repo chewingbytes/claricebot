@@ -18,22 +18,14 @@ cp .env.example .env
 Fill in:
 
 ```
-SUPABASE_URL=http://89.167.51.65:8000
-SUPABASE_ANON_KEY=your-anon-key
+PUBLIC_SUPABASE_URL=
+PUBLIC_SUPABASE_ANON_KEY=
 ```
 
 Run locally:
 
 ```bash
 npm run dev
-```
-
-## API
-
-The web client fetches from the Astro API route:
-
-```
-GET /api/messages?limit=20
 ```
 
 ## Query
