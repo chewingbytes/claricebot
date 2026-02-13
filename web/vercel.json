@@ -1,6 +1,7 @@
 {
+  "version": 2,
   "functions": {
-    "api/*.js": {
+    "src/pages/api/*.js": {
       "runtime": "nodejs20.x"
     }
   }
