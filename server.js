@@ -27,6 +27,26 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
+app.get("/messages", async (req, res) => {
+  const limit = Number(req.query.limit) || 20;
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  try {
+    const { data, error } = await supabase
+      .from("messages")
+      .select("id, input_text, output_text, created_at")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      throw error;
+    }
+
+    return res.json({ data: data || [] });
+  } catch (error) {
+    return res.status(500).json({ error: "Failed to load messages.", detail: String(error) });
+  }
+});
+
 const multipartRaw = express.raw({
   type: "multipart/form-data",
   limit: "50mb"
@@ -43,8 +63,11 @@ app.post("/upload", multipartRaw, jsonBody, urlEncodedBody, async (req, res) => 
 
   try {
     if (contentType.includes("multipart/form-data")) {
-      const boundaryMatch = contentType.match(/boundary=(.+)$/i);
-      const boundary = boundaryMatch?.[1];
+      const boundary = contentType
+        .split("boundary=")[1]
+        ?.split(";")[0]
+        ?.trim()
+        ?.replace(/^"|"$/g, "");
 
       if (!boundary || !Buffer.isBuffer(req.body)) {
         return res.status(400).json({
@@ -56,6 +79,15 @@ app.post("/upload", multipartRaw, jsonBody, urlEncodedBody, async (req, res) => 
       const parts = parse(req.body, boundary);
 
       console.log("PARTS:", parts);
+      console.log(
+        "PART SUMMARY:",
+        parts.map((part) => ({
+          name: part.name,
+          filename: part.filename,
+          type: part.type,
+          size: part.data?.length || 0
+        }))
+      );
       const normalized = parts.map((part) => ({
         ...part,
         rawName: typeof part.name === "string" ? part.name : "",
@@ -81,19 +113,31 @@ app.post("/upload", multipartRaw, jsonBody, urlEncodedBody, async (req, res) => 
         return "";
       };
 
+      const isTextFile = (part) =>
+        Boolean(part.filename && part.type && part.type.startsWith("text/"));
+
+      const isImageLike = (part) =>
+        Boolean(
+          (part.type && part.type.startsWith("image/")) ||
+            (part.type === "application/octet-stream" && part.filename) ||
+            (part.filename && !isTextFile(part))
+        );
+
       const textFieldParts = normalized.filter(
-        (part) => !part.filename && (part.name === "text" || part.name === "message")
+        (part) =>
+          !part.filename &&
+          !isImageLike(part) &&
+          (part.name === "text" || part.name === "message")
       );
 
       const fallbackTextParts = normalized.filter(
         (part) =>
           !part.filename &&
+          !isImageLike(part) &&
           (!part.name || (part.name !== "text" && part.name !== "message"))
       );
 
-      const textFileParts = normalized.filter(
-        (part) => part.filename && part.type && part.type.startsWith("text/")
-      );
+      const textFileParts = normalized.filter((part) => isTextFile(part));
 
       const selectedTextParts =
         textFieldParts.length > 0
@@ -108,9 +152,7 @@ app.post("/upload", multipartRaw, jsonBody, urlEncodedBody, async (req, res) => 
         .join("\n")
         .trim();
 
-      const fileParts = normalized.filter(
-        (part) => part.filename && (!part.type || !part.type.startsWith("text/"))
-      );
+      const fileParts = normalized.filter((part) => isImageLike(part));
 
       images = fileParts.map((part) => ({
         buffer: part.data,
@@ -146,7 +188,10 @@ app.post("/upload", multipartRaw, jsonBody, urlEncodedBody, async (req, res) => 
       }
     }
 
+    console.log("summary:", imageSummaries);
+
     const outputText = await analyzeText(openai, text, imageSummaries);
+
 
     const { error: insertError } = await supabase.from("messages").insert({
       input_text: text,
