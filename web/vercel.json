@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "src/pages/api/*.js": {
-      "runtime": "nodejs20.x"
+      "runtime": "nodejs24.x"
     }
   }
 }
