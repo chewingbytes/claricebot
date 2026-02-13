@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
 
 export default function MessageFeed() {
   const [rows, setRows] = useState([]);
@@ -9,17 +8,12 @@ export default function MessageFeed() {
   const loadLatest = async () => {
     setError("");
     try {
-      const { data, error: fetchError } = await supabase
-        .from("messages")
-        .select("id, input_text, output_text, created_at")
-        .order("created_at", { ascending: false })
-        .limit(20);
-
-      if (fetchError) {
-        throw fetchError;
+      const response = await fetch(`/api/messages?limit=20`);
+      if (!response.ok) {
+        throw new Error(`Request failed: ${response.status}`);
       }
-
-      setRows(data || []);
+      const payload = await response.json();
+      setRows(payload.data || []);
     } catch (err) {
       setError(String(err));
     } finally {
