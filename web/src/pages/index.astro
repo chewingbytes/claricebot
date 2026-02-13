@@ -1,0 +1,90 @@
+---
+import { supabase } from "../lib/supabase";
+
+const { data, error } = await supabase
+  .from("messages")
+  .select("id, input_text, output_text, created_at")
+  .order("created_at", { ascending: false })
+  .limit(20);
+
+const rows = data ?? [];
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Screen Summaries</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Inter", system-ui, sans-serif;
+        background: #0b0c10;
+        color: #f8f8f8;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+      }
+      h1 {
+        margin: 0 0 16px;
+        font-size: 24px;
+      }
+      .error {
+        color: #ff6b6b;
+        margin-bottom: 16px;
+      }
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+      .card {
+        background: #16181d;
+        border-radius: 12px;
+        padding: 16px;
+      }
+      .timestamp {
+        color: #9aa4b2;
+        font-size: 12px;
+        margin-bottom: 8px;
+      }
+      .label {
+        color: #7bdff2;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 4px;
+      }
+      .body {
+        white-space: pre-wrap;
+        margin-bottom: 12px;
+      }
+      .empty {
+        color: #9aa4b2;
+        text-align: center;
+        padding: 32px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Latest Screen Summaries</h1>
+    {error ? <div class="error">{error.message}</div> : null}
+    {rows.length === 0 ? (
+      <div class="empty">No messages yet.</div>
+    ) : (
+      <div class="grid">
+        {rows.map((row) => (
+          <article class="card">
+            <div class="timestamp">
+              {new Date(row.created_at).toLocaleString()}
+            </div>
+            <div class="label">Input</div>
+            <div class="body">{row.input_text || "(empty)"}</div>
+            <div class="label">Output</div>
+            <div class="body">{row.output_text || "(empty)"}</div>
+          </article>
+        ))}
+      </div>
+    )}
+  </body>
+</html>
