@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const API_BASE_URL = "https://clarice.singaporewebsitesagain.com";
+const API_BASE_URL = "https://clarice.singaporewebsitedesigns.com";
 
 export default function MessageFeed() {
   const [rows, setRows] = useState([]);
