@@ -11,12 +11,12 @@ export async function analyzeImage(openai, image, index = 0) {
           {
             type: "input_text",
             text:
-              "Provide a detailed summary of this image. Focus on visible text, UI elements, and any actionable context."
+              "You are an image processer. You will receive one or more images in a grid for easier viewing. Provide detailed summaries of each images."
           },
           {
             type: "input_image",
             image_url: imageUrl
-          }
+          },
         ]
       }
     ]
@@ -38,7 +38,7 @@ export async function analyzeText(openai, inputText, imageSummaries) {
           {
             type: "input_text",
             text:
-              "You are given user input text and detailed image summaries. Provide a helpful response based on all information."
+              "You are given user input text and detailed analysis of the user's phone screen. Provide a helpful response based on all information."
           },
           {
             type: "input_text",

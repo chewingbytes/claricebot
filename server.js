@@ -8,7 +8,7 @@ import { analyzeImage, analyzeText } from "./models.js";
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 4000;
+const port = 8080;
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -27,6 +27,34 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
+app.get("/messages", async (req, res) => {
+  const limit = Number.parseInt(req.query.limit, 10);
+  const safeLimit = Number.isFinite(limit)
+    ? Math.min(Math.max(limit, 1), 100)
+    : 20;
+
+  try {
+    const { data, error } = await supabase
+      .from("messages")
+      .select("id, input_text, output_text, created_at")
+      .order("created_at", { ascending: false })
+      .limit(safeLimit);
+
+    if (error) {
+      throw error;
+    }
+
+    return res.json({ data: data || [] });
+  } catch (error) {
+    const formattedError = formatError(error);
+    console.error("Messages error:", formattedError);
+    return res.status(500).json({
+      error: "Failed to fetch messages.",
+      detail: formattedError
+    });
+  }
+});
+
 const multipartRaw = express.raw({
   type: "multipart/form-data",
   limit: "50mb"
@@ -34,6 +62,33 @@ const multipartRaw = express.raw({
 
 const jsonBody = express.json({ limit: "10mb" });
 const urlEncodedBody = express.urlencoded({ extended: true, limit: "10mb" });
+
+const formatError = (error) => {
+  if (!error) {
+    return { message: "Unknown error" };
+  }
+
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    };
+  }
+
+  if (typeof error === "object") {
+    return {
+      message: error.message || "Unhandled error",
+      code: error.code,
+      status: error.status,
+      details: error.details,
+      hint: error.hint,
+      raw: JSON.stringify(error)
+    };
+  }
+
+  return { message: String(error) };
+};
 
 app.post("/upload", multipartRaw, jsonBody, urlEncodedBody, async (req, res) => {
   const contentType = req.headers["content-type"] || "";
@@ -187,7 +242,12 @@ app.post("/upload", multipartRaw, jsonBody, urlEncodedBody, async (req, res) => 
 
     return res.json({ output: outputText });
   } catch (error) {
-    return res.status(500).json({ error: "Processing failed.", detail: String(error) });
+    const formattedError = formatError(error);
+    console.error("Upload error:", formattedError);
+    return res.status(500).json({
+      error: "Processing failed.",
+      detail: formattedError
+    });
   }
 });
 
